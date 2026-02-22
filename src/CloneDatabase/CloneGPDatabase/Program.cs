@@ -28,14 +28,14 @@ internal class Program
         //ask for the connectionstring to the source database
 
 
-        string sourceServer = config[CloneConstants.SourceServerKey] ?? ".";
-        Console.WriteLine($"Using {sourceServer} for SourceServer");
+        string sourceConnectionString = config.GetConnectionString(CloneConstants.SourceSqlConnectionStringKey);
+        if (string.IsNullOrWhiteSpace(sourceConnectionString))
+        {
+            Console.WriteLine("Source connection string cannot be empty. Update the App Settings file.");
+            return;
+        }
+        Console.WriteLine("Using configured source connection string");
 
-        string sourceDatabase = config[CloneConstants.SourceDatabaseKey] ?? "TWO";
-        Console.WriteLine($"Using {sourceDatabase} for database name");
-
-        var sourceConnectionString = $"Server={sourceServer};Database={sourceDatabase};Trusted_Connection=True;TrustServerCertificate=true";
-        //ask for the connectionstring to the destination database
         string destinationConnectionString = config.GetConnectionString(CloneConstants.DestinationSqlConnectionStringKey);
         if (string.IsNullOrWhiteSpace(destinationConnectionString))
         {
@@ -49,7 +49,7 @@ internal class Program
             sourceConn.Open();
             destConn.Open();
 
-            var tables = await DMLHelper.DropAndRecreateTables(destConn, sourceServer, sourceDatabase);
+            var tables = await DMLHelper.DropAndRecreateTables(destConn, sourceConn);
             Console.WriteLine($"Dropped and Created {tables.Count} Tables");
         }
 

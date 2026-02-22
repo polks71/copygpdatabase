@@ -28,13 +28,14 @@ namespace CloneGPDatabase
             }
             return tables;
         }
-        public static async Task<List<string>> DropAndRecreateTables(SqlConnection destinationConn, string serverName, string databasename)
+        public static async Task<List<string>> DropAndRecreateTables(SqlConnection destinationConn, SqlConnection sourceConn)
         {
             var tables = new List<string>();
-            Server server = new Server(serverName);
-            
+            ServerConnection serverConnection = new ServerConnection(sourceConn);
+            Server server = new Server(serverConnection);
+
             // Reference the database.    
-            Database db = server.Databases[databasename];
+            Database db = server.Databases[sourceConn.Database];
 
             Scripter createScripter = new Scripter(server);
             createScripter.Options.ScriptDrops = false;

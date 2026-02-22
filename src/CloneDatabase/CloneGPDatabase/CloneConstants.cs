@@ -9,7 +9,6 @@ namespace CloneGPDatabase
     internal static class CloneConstants
     {
         public const string DestinationSqlConnectionStringKey = "DESTINATION_SQL";
-        public const string SourceServerKey = "SourceServer";
-        public const string SourceDatabaseKey = "SourceDatabase";
+        public const string SourceSqlConnectionStringKey = "SOURCE_SQL";
     }
 }
