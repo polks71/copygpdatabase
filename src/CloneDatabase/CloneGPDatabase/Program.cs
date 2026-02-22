@@ -51,6 +51,9 @@ internal class Program
 
             var tables = await DMLHelper.DropAndRecreateTables(destConn, sourceConn, bool.Parse(config[CloneConstants.SkipIfExistsKey] ?? "false"));
             Console.WriteLine($"Dropped and Created {tables.Count} Tables");
+
+            var copiedRows = await DataCopyHelper.CopyData(sourceConn, destConn);
+            Console.WriteLine($"Copied {copiedRows} Total Rows");
         }
 
         Console.WriteLine("Done");
