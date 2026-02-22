@@ -55,6 +55,11 @@ internal class Program
             int maxCopyThreads = int.Parse(config[CloneConstants.MaxCopyThreadsKey] ?? "4");
             var copiedRows = await DataCopyHelper.CopyData(sourceConn, destConn, maxCopyThreads);
             Console.WriteLine($"Copied {copiedRows} Total Rows");
+
+            int mismatches = await DataValidationHelper.ValidateRowCounts(sourceConn, destConn);
+            Console.WriteLine(mismatches == 0
+                ? "Validation passed: all table row counts match."
+                : $"Validation complete: {mismatches} table(s) with mismatched row counts.");
         }
 
         Console.WriteLine("Done");
