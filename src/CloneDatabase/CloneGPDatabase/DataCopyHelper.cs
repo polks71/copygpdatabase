@@ -5,6 +5,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace CloneGPDatabase
@@ -20,8 +21,12 @@ namespace CloneGPDatabase
             public bool HasIdentity { get; set; }
         }
 
-        public static async Task<int> CopyData(SqlConnection sourceConn, SqlConnection destinationConn)
+        public static async Task<int> CopyData(SqlConnection sourceConn, SqlConnection destinationConn, int maxThreads = 4)
         {
+            // Extract connection strings so each task can open its own independent connections.
+            string sourceConnectionString = sourceConn.ConnectionString;
+            string destinationConnectionString = destinationConn.ConnectionString;
+
             // Collect all table metadata via SMO before opening any data readers
             // to avoid multiple active result sets on the same connection.
             var tableInfos = new List<TableCopyInfo>();
@@ -72,15 +77,42 @@ namespace CloneGPDatabase
                 });
             }
 
-            int totalRows = 0;
+            var semaphore = new SemaphoreSlim(maxThreads);
+            var tasks = new List<Task<int>>();
+
             foreach (var tableInfo in tableInfos)
             {
-                int rowCount = await CopyTableData(sourceConn, destinationConn, tableInfo);
-                Console.WriteLine($"   Copied {rowCount} rows into [{tableInfo.Schema}].[{tableInfo.TableName}]");
-                totalRows += rowCount;
+                // Block (asynchronously) until a thread slot is available.
+                await semaphore.WaitAsync();
+
+                var info = tableInfo;
+                var task = Task.Run(async () =>
+                {
+                    try
+                    {
+                        using (var srcConn = new SqlConnection(sourceConnectionString))
+                        using (var dstConn = new SqlConnection(destinationConnectionString))
+                        {
+                            await srcConn.OpenAsync();
+                            await dstConn.OpenAsync();
+
+                            int count = await CopyTableData(srcConn, dstConn, info);
+                            Console.WriteLine($"   Copied {count} rows into [{info.Schema}].[{info.TableName}]");
+                            return count;
+                        }
+                    }
+                    finally
+                    {
+                        // Releasing here lets the next table start immediately.
+                        semaphore.Release();
+                    }
+                });
+
+                tasks.Add(task);
             }
 
-            return totalRows;
+            int[] results = await Task.WhenAll(tasks);
+            return results.Sum();
         }
 
         private static async Task<int> CopyTableData(SqlConnection sourceConn, SqlConnection destinationConn, TableCopyInfo tableInfo)

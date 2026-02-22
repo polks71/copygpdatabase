@@ -52,7 +52,8 @@ internal class Program
             var tables = await DMLHelper.DropAndRecreateTables(destConn, sourceConn, bool.Parse(config[CloneConstants.SkipIfExistsKey] ?? "false"));
             Console.WriteLine($"Dropped and Created {tables.Count} Tables");
 
-            var copiedRows = await DataCopyHelper.CopyData(sourceConn, destConn);
+            int maxCopyThreads = int.Parse(config[CloneConstants.MaxCopyThreadsKey] ?? "4");
+            var copiedRows = await DataCopyHelper.CopyData(sourceConn, destConn, maxCopyThreads);
             Console.WriteLine($"Copied {copiedRows} Total Rows");
         }
 
