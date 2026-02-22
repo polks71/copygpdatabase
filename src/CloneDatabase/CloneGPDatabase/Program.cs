@@ -49,7 +49,7 @@ internal class Program
             sourceConn.Open();
             destConn.Open();
 
-            var tables = await DMLHelper.DropAndRecreateTables(destConn, sourceConn);
+            var tables = await DMLHelper.DropAndRecreateTables(destConn, sourceConn, bool.Parse(config[CloneConstants.SkipIfExistsKey] ?? "false"));
             Console.WriteLine($"Dropped and Created {tables.Count} Tables");
         }
 
