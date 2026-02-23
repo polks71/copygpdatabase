@@ -40,7 +40,7 @@ namespace CloneGPDatabase
                 if (tb.IsSystemObject) continue;
 
                 var pkColumns = new List<string>();
-                foreach (Index idx in tb.Indexes)
+                foreach (Microsoft.SqlServer.Management.Smo.Index idx in tb.Indexes)
                 {
                     if (idx.IndexKeyType == IndexKeyType.DriPrimaryKey)
                     {
@@ -177,6 +177,7 @@ namespace CloneGPDatabase
                             var value = reader.IsDBNull(i) ? (object)DBNull.Value : reader.GetValue(i);
                             destCmd.Parameters.AddWithValue($"@p{i}", value);
                         }
+                        destCmd.CommandTimeout = 0; // In case of very large tables, we don't want to timeout.
                         await destCmd.ExecuteNonQueryAsync();
                         rowCount++;
                     }

@@ -86,6 +86,7 @@ namespace CloneGPDatabase
                     sb.AppendLine($"----- END {tb.Name} -----");
 
                     var sqlcommand = new SqlCommand(sb.ToString(), destinationConn);
+                    sqlcommand.CommandTimeout = 0; // Set to 0 for unlimited timeout, adjust as needed
                     await sqlcommand.ExecuteNonQueryAsync();
                     sb.Clear();
 
