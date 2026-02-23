@@ -28,7 +28,7 @@ namespace CloneGPDatabase
             }
             return tables;
         }
-        public static async Task<List<string>> DropAndRecreateTables(SqlConnection destinationConn, SqlConnection sourceConn, bool skipIfExists = false)
+        public static async Task<List<string>> CreateTablesIfTheyDontExist(SqlConnection destinationConn, SqlConnection sourceConn)
         {
             var tables = new List<string>();
             ServerConnection serverConnection = new ServerConnection(sourceConn);
@@ -43,7 +43,10 @@ namespace CloneGPDatabase
             createScripter.Options.ScriptSchema = true; // To include schema
             createScripter.Options.SchemaQualify = true;
             createScripter.Options.WithDependencies = false;
-            createScripter.Options.Indexes = false;   // To include indexes  
+            createScripter.Options.Indexes = false;   // To include indexes
+            createScripter.Options.NoIdentities = true; // Strip IDENTITY so destination columns are plain integers
+            createScripter.Options.IncludeIfNotExists = true;//include a if not exists check
+            
 
             Scripter dropScripter = new Scripter(server);
             dropScripter.Options.ScriptDrops = true;
@@ -56,13 +59,6 @@ namespace CloneGPDatabase
                 // check if the table is not a system table  
                 if (tb.IsSystemObject == false)
                 {
-                    if (skipIfExists && TableExistsInDestination(destinationConn, tb.Schema, tb.Name))
-                    {
-                        Console.WriteLine($"-- Skipping {tb.Name} (already exists in destination)");
-                        i++;
-                        continue;
-                    }
-
                     Console.WriteLine("-- Scripting for table " + tb.Name);
                     tables.Add(tb.Name);
                     sb.AppendLine($"----- START {tb.Name} -----");
@@ -97,16 +93,5 @@ namespace CloneGPDatabase
             return tables;
         }
 
-        private static bool TableExistsInDestination(SqlConnection conn, string schema, string tableName)
-        {
-            using (var cmd = new SqlCommand(
-                "SELECT COUNT(*) FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE' AND TABLE_SCHEMA = @schema AND TABLE_NAME = @name",
-                conn))
-            {
-                cmd.Parameters.AddWithValue("@schema", schema);
-                cmd.Parameters.AddWithValue("@name", tableName);
-                return (int)cmd.ExecuteScalar() > 0;
             }
         }
-    }
-}

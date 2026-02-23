@@ -49,7 +49,7 @@ internal class Program
             sourceConn.Open();
             destConn.Open();
 
-            var tables = await DMLHelper.DropAndRecreateTables(destConn, sourceConn, bool.Parse(config[CloneConstants.SkipIfExistsKey] ?? "false"));
+            var tables = await DMLHelper.CreateTablesIfTheyDontExist(destConn, sourceConn);
             Console.WriteLine($"Dropped and Created {tables.Count} Tables");
 
             int maxCopyThreads = int.Parse(config[CloneConstants.MaxCopyThreadsKey] ?? "4");
