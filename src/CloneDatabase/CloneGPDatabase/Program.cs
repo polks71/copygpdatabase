@@ -25,10 +25,6 @@ internal class Program
         // then copy the data structure of the GP Database to the destination database
         // then copy the data from the source database to the destination database
 
-        Logger.Log("Note: This utility will drop each table before creating the table in the destination.");
-        Logger.Log("Note: Windows authentication is used to connect to the source SQL Server");
-        //ask for the connectionstring to the source database
-
 
         string sourceConnectionString = config.GetConnectionString(CloneConstants.SourceSqlConnectionStringKey);
         if (string.IsNullOrWhiteSpace(sourceConnectionString))
@@ -52,7 +48,7 @@ internal class Program
             destConn.Open();
 
             var tables = await DMLHelper.CreateTablesIfTheyDontExist(destConn, sourceConn);
-            Logger.Log($"Dropped and Created {tables.Count} Tables");
+            Logger.Log($"Created {tables.Count} Tables");
 
             int maxCopyThreads = int.Parse(config[CloneConstants.MaxCopyThreadsKey] ?? "4");
             var copiedRows = await DataCopyHelper.CopyData(sourceConn, destConn, tables, maxCopyThreads);
