@@ -24,7 +24,7 @@ namespace CloneGPDatabase
                     tables.Add((reader.GetString(0), reader.GetString(1)));
             }
 
-            Console.WriteLine($"-- Validating row counts for {tables.Count} tables");
+            Logger.Log($"-- Validating row counts for {tables.Count} tables");
 
             int mismatchCount = 0;
 
@@ -36,7 +36,7 @@ namespace CloneGPDatabase
                 if (sourceCount != destCount)
                 {
                     string destDisplay = destCount == -1 ? "table not found" : destCount.ToString();
-                    Console.WriteLine($"   MISMATCH [{table.Schema}].[{table.TableName}]: Source={sourceCount}, Destination={destDisplay}");
+                    Logger.Log($"   MISMATCH [{table.Schema}].[{table.TableName}]: Source={sourceCount}, Destination={destDisplay}");
                     mismatchCount++;
                 }
             }

@@ -59,7 +59,7 @@ namespace CloneGPDatabase
                 // check if the table is not a system table  
                 if (tb.IsSystemObject == false)
                 {
-                    Console.WriteLine("-- Scripting for table " + tb.Name);
+                    Logger.Log("-- Scripting for table " + tb.Name);
                     tables.Add(tb.Name);
                     sb.AppendLine($"----- START {tb.Name} -----");
 

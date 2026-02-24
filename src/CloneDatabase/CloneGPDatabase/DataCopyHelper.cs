@@ -18,7 +18,6 @@ namespace CloneGPDatabase
             public string TableName { get; set; }
             public List<string> ColumnNames { get; set; }
             public List<string> PkColumnNames { get; set; }
-            public bool HasIdentity { get; set; }
         }
 
         public static async Task<int> CopyData(SqlConnection sourceConn, SqlConnection destinationConn, int maxThreads = 4)
@@ -52,19 +51,15 @@ namespace CloneGPDatabase
 
                 if (pkColumns.Count == 0)
                 {
-                    Console.WriteLine($"-- Skipping {tb.Schema}.{tb.Name} (no primary key)");
+                    Logger.Log($"-- Skipping {tb.Schema}.{tb.Name} (no primary key)");
                     continue;
                 }
 
                 var columnNames = new List<string>();
-                bool hasIdentity = false;
                 foreach (Column col in tb.Columns)
                 {
                     if (!col.Computed)
-                    {
                         columnNames.Add(col.Name);
-                        if (col.Identity) hasIdentity = true;
-                    }
                 }
 
                 tableInfos.Add(new TableCopyInfo
@@ -72,8 +67,7 @@ namespace CloneGPDatabase
                     Schema = tb.Schema,
                     TableName = tb.Name,
                     ColumnNames = columnNames,
-                    PkColumnNames = pkColumns,
-                    HasIdentity = hasIdentity
+                    PkColumnNames = pkColumns
                 });
             }
 
@@ -97,7 +91,7 @@ namespace CloneGPDatabase
                             await dstConn.OpenAsync();
 
                             int count = await CopyTableData(srcConn, dstConn, info);
-                            Console.WriteLine($"   Copied {count} rows into [{info.Schema}].[{info.TableName}]");
+                            Logger.Log($"   Copied {count} rows into [{info.Schema}].[{info.TableName}]");
                             return count;
                         }
                     }
@@ -129,19 +123,14 @@ namespace CloneGPDatabase
             var insertVals = string.Join(", ", columnNames.Select(c => $"source.[{c}]"));
 
             // Build the MERGE template once; parameters are rebound per row.
-            // Example generated SQL for a table with an identity PK and one non-PK column:
+            // Example generated SQL for a table with a PK and one non-PK column:
             //
-            //   SET IDENTITY_INSERT [dbo].[MyTable] ON;
             //   MERGE INTO [dbo].[MyTable] AS target
             //   USING (VALUES (@p0, @p1)) AS source ([Id], [Name])
             //   ON (target.[Id] = source.[Id])
             //   WHEN MATCHED THEN UPDATE SET target.[Name] = source.[Name]
             //   WHEN NOT MATCHED THEN INSERT ([Id], [Name]) VALUES (source.[Id], source.[Name]);
-            //   SET IDENTITY_INSERT [dbo].[MyTable] OFF;
             var sb = new StringBuilder();
-
-            if (tableInfo.HasIdentity)
-                sb.AppendLine($"SET IDENTITY_INSERT [{tableInfo.Schema}].[{tableInfo.TableName}] ON;");
 
             sb.AppendLine($"MERGE INTO [{tableInfo.Schema}].[{tableInfo.TableName}] AS target");
             sb.AppendLine($"USING (VALUES ({string.Join(", ", paramNames)})) AS source ({insertCols})");
@@ -155,15 +144,12 @@ namespace CloneGPDatabase
 
             sb.AppendLine($"WHEN NOT MATCHED THEN INSERT ({insertCols}) VALUES ({insertVals});");
 
-            if (tableInfo.HasIdentity)
-                sb.AppendLine($"SET IDENTITY_INSERT [{tableInfo.Schema}].[{tableInfo.TableName}] OFF;");
-
             string mergeTemplate = sb.ToString();
 
             var selectSql = $"SELECT {insertCols} FROM [{tableInfo.Schema}].[{tableInfo.TableName}]";
             int rowCount = 0;
 
-            Console.WriteLine($"-- Copying data for table [{tableInfo.Schema}].[{tableInfo.TableName}]");
+            Logger.Log($"-- Copying data for table [{tableInfo.Schema}].[{tableInfo.TableName}]");
 
             using (var sourceCmd = new SqlCommand(selectSql, sourceConn))
             using (var reader = await sourceCmd.ExecuteReaderAsync())

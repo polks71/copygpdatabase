@@ -11,5 +11,6 @@ namespace CloneGPDatabase
         public const string DestinationSqlConnectionStringKey = "DESTINATION_SQL";
         public const string SourceSqlConnectionStringKey = "SOURCE_SQL";
         public const string MaxCopyThreadsKey = "MaxCopyThreads";
+        public const string LogFilePathKey = "LogFilePath";
     }
 }
