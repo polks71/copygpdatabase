@@ -20,7 +20,7 @@ I have tested it with local instances of SQL databases, I tested the creation co
 
 ## What It Does
 
-- Connects to an existing destination SQL database.
+- Connects to an existing source SQL database.
 - Recreates the structure of the source GP database (tables and basic schema) in the destination database.
    - Primary Keys are maintained for each table, if there is one.
 - Copies all tables and data from the source database into the destination database.
