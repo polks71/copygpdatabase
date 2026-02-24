@@ -45,7 +45,7 @@ This tool is typically used as part of a GP to Business Central migration plan:
 - Allow users, auditors, or reporting tools to query the legacy data after cutover to BC.
 - Avoid carrying over all historical data into BC while still preserving it for reference.
 
-You can also use the tool outside of GP → BC migrations any time you need a lightweight full-data copy of a GP database for analysis or archiving. The data copy does a merge so any updates
+You can also use the tool outside of GP → BC migrations any time you need a lightweight full-data copy of a GP database for analysis or archiving. The data copy does a merge so any updates that occur between run will be migrated over.
 
 ## Requirements
 
