@@ -22,9 +22,13 @@ I have tested it with local instances of SQL databases, I tested the creation co
 
 - Connects to an existing destination SQL database.
 - Recreates the structure of the source GP database (tables and basic schema) in the destination database.
+   - Primary Keys are maintained for each table, if there is one.
 - Copies all tables and data from the source database into the destination database.
+- Checks record counts and reports any tables that don't match.
 - Leaves the destination database in a state that is easy to query and archive.
-- Primary Keys are maintained for each table, if there is one.
+
+### What about updates?
+The utility does use a SQL Merge statement. So, if you run it multiple times data changes will migrate over. ***BUT*** Structure changes are not migrated. If a table structure changes you will need to drop the destination table manually.
 
 ## What It Does **Not** Do (Important Limitations)
 
