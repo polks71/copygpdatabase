@@ -7,23 +7,8 @@ namespace CloneGPDatabase
 {
     internal class DataValidationHelper
     {
-        public static async Task<int> ValidateRowCounts(SqlConnection sourceConn, SqlConnection destinationConn)
+        public static async Task<int> ValidateRowCounts(SqlConnection sourceConn, SqlConnection destinationConn, List<(string Schema, string TableName)> tables)
         {
-            // Collect the full table list from the source first, then close the reader
-            // before issuing per-table COUNT queries to avoid multiple active result sets.
-            var tables = new List<(string Schema, string TableName)>();
-
-            using (var cmd = new SqlCommand(@"
-                SELECT TABLE_SCHEMA, TABLE_NAME
-                FROM INFORMATION_SCHEMA.TABLES
-                WHERE TABLE_TYPE = 'BASE TABLE'
-                ORDER BY TABLE_SCHEMA, TABLE_NAME", sourceConn))
-            using (var reader = await cmd.ExecuteReaderAsync())
-            {
-                while (await reader.ReadAsync())
-                    tables.Add((reader.GetString(0), reader.GetString(1)));
-            }
-
             Logger.Log($"-- Validating row counts for {tables.Count} tables");
 
             int mismatchCount = 0;

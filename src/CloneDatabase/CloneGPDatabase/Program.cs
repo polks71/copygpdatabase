@@ -55,10 +55,10 @@ internal class Program
             Logger.Log($"Dropped and Created {tables.Count} Tables");
 
             int maxCopyThreads = int.Parse(config[CloneConstants.MaxCopyThreadsKey] ?? "4");
-            var copiedRows = await DataCopyHelper.CopyData(sourceConn, destConn, maxCopyThreads);
+            var copiedRows = await DataCopyHelper.CopyData(sourceConn, destConn, tables, maxCopyThreads);
             Logger.Log($"Copied {copiedRows} Total Rows");
 
-            int mismatches = await DataValidationHelper.ValidateRowCounts(sourceConn, destConn);
+            int mismatches = await DataValidationHelper.ValidateRowCounts(sourceConn, destConn, tables);
             Logger.Log(mismatches == 0
                 ? "Validation passed: all table row counts match."
                 : $"Validation complete: {mismatches} table(s) with mismatched row counts.");

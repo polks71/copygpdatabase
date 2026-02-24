@@ -28,9 +28,9 @@ namespace CloneGPDatabase
             }
             return tables;
         }
-        public static async Task<List<string>> CreateTablesIfTheyDontExist(SqlConnection destinationConn, SqlConnection sourceConn)
+        public static async Task<List<(string Schema, string TableName)>> CreateTablesIfTheyDontExist(SqlConnection destinationConn, SqlConnection sourceConn)
         {
-            var tables = new List<string>();
+            var tables = new List<(string Schema, string TableName)>();
             ServerConnection serverConnection = new ServerConnection(sourceConn);
             Server server = new Server(serverConnection);
 
@@ -60,7 +60,7 @@ namespace CloneGPDatabase
                 if (tb.IsSystemObject == false)
                 {
                     Logger.Log("-- Scripting for table " + tb.Name);
-                    tables.Add(tb.Name);
+                    tables.Add((tb.Schema, tb.Name));
                     sb.AppendLine($"----- START {tb.Name} -----");
 
                     System.Collections.Specialized.StringCollection dropSc = dropScripter.Script(new Urn[] { tb.Urn });

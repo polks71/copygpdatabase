@@ -20,23 +20,24 @@ namespace CloneGPDatabase
             public List<string> PkColumnNames { get; set; }
         }
 
-        public static async Task<int> CopyData(SqlConnection sourceConn, SqlConnection destinationConn, int maxThreads = 4)
+        public static async Task<int> CopyData(SqlConnection sourceConn, SqlConnection destinationConn, List<(string Schema, string TableName)> tablesToProcess, int maxThreads = 4)
         {
             // Extract connection strings so each task can open its own independent connections.
             string sourceConnectionString = sourceConn.ConnectionString;
             string destinationConnectionString = destinationConn.ConnectionString;
 
-            // Collect all table metadata via SMO before opening any data readers
-            // to avoid multiple active result sets on the same connection.
+            // Collect table metadata via SMO for each table in the provided list.
+            // Using the pre-built list avoids re-enumerating all tables from the source.
             var tableInfos = new List<TableCopyInfo>();
 
             ServerConnection serverConnection = new ServerConnection(sourceConn);
             Server server = new Server(serverConnection);
             Database db = server.Databases[sourceConn.Database];
 
-            foreach (Table tb in db.Tables)
+            foreach (var (schema, tableName) in tablesToProcess)
             {
-                if (tb.IsSystemObject) continue;
+                var tb = db.Tables[tableName, schema];
+                if (tb == null) continue;
 
                 var pkColumns = new List<string>();
                 foreach (Microsoft.SqlServer.Management.Smo.Index idx in tb.Indexes)
@@ -51,7 +52,7 @@ namespace CloneGPDatabase
 
                 if (pkColumns.Count == 0)
                 {
-                    Logger.Log($"-- Skipping {tb.Schema}.{tb.Name} (no primary key)");
+                    Logger.Log($"-- Skipping {schema}.{tableName} (no primary key)");
                     continue;
                 }
 
@@ -64,8 +65,8 @@ namespace CloneGPDatabase
 
                 tableInfos.Add(new TableCopyInfo
                 {
-                    Schema = tb.Schema,
-                    TableName = tb.Name,
+                    Schema = schema,
+                    TableName = tableName,
                     ColumnNames = columnNames,
                     PkColumnNames = pkColumns
                 });
